@@ -5,11 +5,25 @@ import os
 import datetime, time
 import sys
 import requests
-from colorama import Fore, Back, Style
+from colorama import Fore, Back, Style, init
 
-ver = 1.0
+ver = 1.1
+IS_TEST = True
 
 tgs = [450, 45021, 45022, 45023, 45024, 45025, 45026, 45027, 45028, 45029]
+NUM_HISTORY = 5
+TIMEOUT = 60
+
+init(autoreset=True)
+CHAR_BOLD = '\033[1m'
+CHAR_UNBOLD = '\033[0m'
+CHAR_RESET = Back.RESET + Fore.RESET + Style.RESET_ALL + CHAR_UNBOLD
+
+# STYLE_ACTIVE = CHAR_BOLD + Fore.RED + Style.BRIGHT
+# STYLE_INACTIVE = CHAR_BOLD + Fore.YELLOW + Style.BRIGHT
+STYLE_ACTIVE = Back.RED  + Fore.BLACK
+STYLE_INACTIVE = Back.YELLOW + Fore.BLACK
+STYLE_RESET = Back.RESET + Fore.RESET + Style.RESET_ALL + CHAR_UNBOLD
 
 try:
     text_release = requests.get('https://api.github.com/repos/chanyeolyoo/BMRMonitor/releases/latest').text
@@ -19,17 +33,40 @@ try:
     resp_release = eval(text_release)
     tag_release = float(resp_release['tag_name'])
 
-    if tag_release > ver:
+    if (tag_release > ver) or (tag_release >= ver and IS_TEST):
         is_update_available = True
     else:
         is_update_available = False
 except:
     is_update_available = False
 
+history_tgs = {}
+for tg in tgs:
+    history_tgs[tg] = []
 
-history = []
-for idx in range(len(tgs)):
-    history.append({'tg':tgs[idx], 'data':{}})
+def sort_data_by_time(data):
+    now = time.time()
+
+
+    data_new = []
+    callsigns = set([d['SourceCall'] for d in data])
+    for callsign in callsigns:
+        entry = {}
+        for d in data:
+            if d['SourceCall'] == callsign:
+                if (len(entry) == 0) or (d['Stop'] > entry['Stop']) or (d['Stop']==0 and d['Start'] > entry['Start']):
+                    entry = d
+        data_new.append(entry)
+
+    data = data_new
+    data_new = []
+    for d in data:
+        if d['Stop'] == 0 or now-d['Stop'] < TIMEOUT:
+            data_new.append(d)
+
+    data_new = sorted(data_new, key=lambda k:k['Start'], reverse=True)
+    data_new = data_new[0:(NUM_HISTORY)]
+    return data_new
 
 def get_data_from_packet(str):
     str = str.replace('\\', '')
@@ -43,43 +80,53 @@ def get_data_from_packet(str):
     except:
         return None
 
-def print_history(history):
 
+def print_history(history_tgs):
     now = time.time()
 
     os.system('cls')
 
-    for item in history:
-        data = item['data']
+    if IS_TEST:
+        print('***** TEST VERSION *****')
 
-        dstID = item['tg']
+    for tg in tgs:
+        text_tg = text_tg = '%s %-5d %s' % (STYLE_RESET, tg, STYLE_RESET)
+        text_active = ''
+        text_inactive = ''
+
+        history_tg = history_tgs[tg]
         try:
-            if now-data['Start'] > 180:
-                data = {}
-
-            callsign = data['SourceCall']
-            callname = data['SourceName']
-            if data['Stop'] == 0:
-                color = '\033[1m' + Fore.RED + Style.BRIGHT
-                elapsed = now-data['Start']
-                text = '%s, %s (Active for %ds)' % (callsign, callname, elapsed)
+            if history_tg[0]['Stop'] == 0:
+                elapsed = now-history_tg[0]['Start']
+                text_active = '%s, %s (%ds)' % (history_tg[0]['SourceCall'], history_tg[0]['SourceName'], elapsed) + ' '
+                text_active = text_active.ljust(30, '-')
+                callsigns = [d['SourceCall'] for d in history_tg[1:]]
+                if len(callsigns) > 0:
+                    text_inactive = ', '.join(callsigns)
+                text_tg = '%s %-5d %s' % (STYLE_ACTIVE, tg, STYLE_RESET)
             else:
-                color = '\033[1m' + Fore.YELLOW + Style.BRIGHT
-                elapsed = now-data['Stop']
-                text = '%s, %s (%ds ago)' % (callsign, callname, elapsed)
-        except Exception as e:
-            color = '\033[0m' + Back.RESET + Fore.RESET + Style.RESET_ALL
-            text = ''
+                text_inactive = ''
+                for d in history_tg:
+                    if now - d['Stop'] < TIMEOUT:
+                        text_inactive = text_inactive + ('%s (%ds)' % (d['SourceCall'], now - d['Stop'])) + ', '
+                text_inactive = text_inactive
 
-        text = "%-5d | %s" % (dstID, text)
-        print('%s%-50s' % (color, text))
-    print(Back.RESET + Fore.RESET + Style.RESET_ALL + '\033[0m')
-    print('Developed by Chanyeol Yoo (VK2CYO) ver. %.1f' % ver)
+                if len(text_inactive) > 0:
+                    text_active = ''.ljust(30, '-')
+                    text_tg = '%s %-5d %s' % (STYLE_INACTIVE, tg, STYLE_RESET)
+        except Exception as e:
+            a = 1
+
+        print('%s | %s | %s' % (text_tg, text_active.ljust(30), text_inactive))
+
+    print(Back.RESET + Fore.RESET + Style.RESET_ALL + CHAR_UNBOLD)
+    print('Developed by Chanyeol Yoo (VK2CYO) v%.1f' % ver)
     print('https://github.com/chanyeolyoo/BMRMonitor')
 
     if is_update_available:
-        print()
         print(Back.GREEN + Fore.BLACK + 'Update available: ' + resp_release['html_url'] + Style.RESET_ALL)
+    else:
+        print('Up-to-date')
 
 
 async def async_fetch(queue):
@@ -106,11 +153,10 @@ async def async_process(queue):
 
         if data['DestinationID'] in tgs:
             dstID = data['DestinationID']
-            idx = tgs.index(dstID)
-            history[idx]['data'] = data
+            history_tgs[dstID] = sort_data_by_time(history_tgs[dstID] + [data])
             
         if time.time() - last_print >= 1:
-            print_history(history)
+            print_history(history_tgs)
             last_print = time.time()
 
 
