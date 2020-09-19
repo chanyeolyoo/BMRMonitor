@@ -26,7 +26,6 @@ try:
 except:
     is_update_available = False
 
-
 history = []
 for idx in range(len(tgs)):
     history.append({'tg':tgs[idx], 'data':{}})
