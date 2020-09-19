@@ -4,9 +4,28 @@ import websockets
 import os
 import datetime, time
 import sys
+import requests
 from colorama import Fore, Back, Style
 
+ver = 1.0
+
 tgs = [450, 45021, 45022, 45023, 45024, 45025, 45026, 45027, 45028, 45029]
+
+try:
+    text_release = requests.get('https://api.github.com/repos/chanyeolyoo/BMRMonitor/releases/latest').text
+    text_release = text_release.replace('false', 'False')
+    text_release = text_release.replace('true', 'True')
+    text_release = text_release.replace('null', 'None')
+    resp_release = eval(text_release)
+    tag_release = float(resp_release['tag_name'])
+
+    if tag_release > ver:
+        is_update_available = True
+    else:
+        is_update_available = False
+except:
+    is_update_available = False
+    
 
 history = []
 for idx in range(len(tgs)):
@@ -55,8 +74,12 @@ def print_history(history):
         text = "%-5d | %s" % (dstID, text)
         print('%s%-50s' % (color, text))
     print(Back.RESET + Fore.RESET + Style.RESET_ALL + '\033[0m')
-    print('Developed by Chanyeol Yoo (VK2CYO)')
+    print('Developed by Chanyeol Yoo (VK2CYO) ver. %.1f' % ver)
     print('https://github.com/chanyeolyoo/BMRMonitor')
+
+    if is_update_available:
+        print()
+        print(Back.GREEN + Fore.BLACK + 'Update is available: ' + resp_release['html_url'] + Style.RESET_ALL)
 
 
 async def async_fetch(queue):
