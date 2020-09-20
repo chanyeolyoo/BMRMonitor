@@ -96,21 +96,18 @@ def print_history(history_tgs):
 
         history_tg = history_tgs[tg]
         try:
+            text_inactive = ''
+            for d in history_tg:
+                if now - d['Stop'] < TIMEOUT:
+                    text_inactive = text_inactive + ('%s (%ds), ' % (d['SourceCall'], now - d['Stop']))
+            text_inactive = text_inactive
+
             if history_tg[0]['Stop'] == 0:
                 elapsed = now-history_tg[0]['Start']
-                text_active = '%s, %s (%ds)' % (history_tg[0]['SourceCall'], history_tg[0]['SourceName'], elapsed) + ' '
+                text_active = '%s, %s (%ds) ' % (history_tg[0]['SourceCall'], history_tg[0]['SourceName'], elapsed)
                 text_active = text_active.ljust(30, '-')
-                callsigns = [d['SourceCall'] for d in history_tg[1:]]
-                if len(callsigns) > 0:
-                    text_inactive = ', '.join(callsigns)
                 text_tg = '%s %-5d %s' % (STYLE_ACTIVE, tg, STYLE_RESET)
             else:
-                text_inactive = ''
-                for d in history_tg:
-                    if now - d['Stop'] < TIMEOUT:
-                        text_inactive = text_inactive + ('%s (%ds)' % (d['SourceCall'], now - d['Stop'])) + ', '
-                text_inactive = text_inactive
-
                 if len(text_inactive) > 0:
                     text_active = ''.ljust(30, '-')
                     text_tg = '%s %-5d %s' % (STYLE_INACTIVE, tg, STYLE_RESET)
