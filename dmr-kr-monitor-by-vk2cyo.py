@@ -8,7 +8,7 @@ import requests
 from colorama import Fore, Back, Style, init
 
 ver = 1.1
-IS_TEST = True
+IS_TEST = False
 
 tgs = [450, 45021, 45022, 45023, 45024, 45025, 45026, 45027, 45028, 45029]
 NUM_HISTORY = 5
