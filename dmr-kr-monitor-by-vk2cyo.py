@@ -86,7 +86,10 @@ def get_data_from_packet(str):
 def print_history(history_tgs):
     now = time.time()
 
-    os.system('cls')
+    if sys.platform == 'linux':
+        os.system('clear')
+    else:
+        os.system('cls')
 
     if IS_TEST:
         print('***** TEST VERSION *****')
