@@ -1,3 +1,13 @@
+"""
+Brandmeister DMR Monitor for Korean Talkgroups
+
+Author: Chanyeol Yoo (VK2CYO)
+Copyright: Chanyeol Yoo, Ph.D. (VK2CYO), 2020
+License: MIT
+Version: v1.1
+Maintainer: Chanyeol Yoo (VK2CYO)
+Email: vk2cyo@gmail.com
+"""
 
 import asyncio
 import websockets
@@ -10,23 +20,22 @@ from colorama import Fore, Back, Style, init
 ver = 1.1
 IS_TEST = False
 
-tgs = [450, 45021, 45022, 45023, 45024, 45025, 45026, 45027, 45028, 45029]
-NUM_HISTORY = 5
-TIMEOUT = 180
+tgs = [450, 45021, 45022, 45023, 45024, 45025, 45026, 45027, 45028, 45029]  # TALKGROUPS TO BE MONITORED
+NUM_HISTORY = 5     # NUMBER OF HISTORY FOR EACH TALKGROUP
+TIMEOUT = 180       # TIMEOUT FOR INACTIVE CALLS
 
-NUM_PADD = 30
+NUM_PADD = 30       # NUMBER OF EMPTY SPACES IN ACTIVE CALL FIELD
 
 init(autoreset=True)
 CHAR_BOLD = '\033[1m'
 CHAR_UNBOLD = '\033[0m'
 CHAR_RESET = Back.RESET + Fore.RESET + Style.RESET_ALL + CHAR_UNBOLD
 
-# STYLE_ACTIVE = CHAR_BOLD + Fore.RED + Style.BRIGHT
-# STYLE_INACTIVE = CHAR_BOLD + Fore.YELLOW + Style.BRIGHT
 STYLE_ACTIVE = Back.RED  + Fore.BLACK
 STYLE_INACTIVE = Back.YELLOW + Fore.BLACK
 STYLE_RESET = Back.RESET + Fore.RESET + Style.RESET_ALL + CHAR_UNBOLD
 
+#### CHECKING FOR UPDATE
 try:
     text_release = requests.get('https://api.github.com/repos/chanyeolyoo/BMRMonitor/releases/latest').text
     text_release = text_release.replace('false', 'False')
@@ -42,10 +51,20 @@ try:
 except:
     is_update_available = False
 
+#### INITIALISING HISTORY LIST FOR EACH TALKGROUP
 history_tgs = {}
 for tg in tgs:
     history_tgs[tg] = []
 
+"""
+SORT_DATA_BY_TIME
+    - This function updates "history_tgs" list given new data
+    - It maintains NUM_HISTORY number of calls for each talkgroup
+    - If duplicate callsigns are present, only the latest one remains
+    - Returned "history_tgs" is in descending order of call time
+    -- If the call is active, then it looks at START time
+    -- Otherwise, it looks at STOP time
+"""
 def sort_data_by_time(data):
     now = time.time()
 
@@ -70,6 +89,11 @@ def sort_data_by_time(data):
     data_new = data_new[0:(NUM_HISTORY)]
     return data_new
 
+"""
+GET_DATA_FROM_PACKET
+    - This function converts string from websocket to dict format
+    - Returns dict data if string is valid; otherwise returns None
+"""
 def get_data_from_packet(str):
     str = str.replace('\\', '')
     str = str.replace('"{', '{')
@@ -82,7 +106,10 @@ def get_data_from_packet(str):
     except:
         return None
 
-
+"""
+PRINT_HISTORY
+    - Prints "history_tgs" in terminal
+"""
 def print_history(history_tgs):
     now = time.time()
 
@@ -121,7 +148,6 @@ def print_history(history_tgs):
 
         print('%s | %s | %s' % (text_tg, text_active.ljust(NUM_PADD), text_inactive))
 
-    print(Back.RESET + Fore.RESET + Style.RESET_ALL + CHAR_UNBOLD)
     print('Developed by Chanyeol Yoo (VK2CYO) v%.1f' % ver)
     print('https://github.com/chanyeolyoo/BMRMonitor')
 
@@ -130,7 +156,12 @@ def print_history(history_tgs):
     else:
         print('Up-to-date')
 
-
+"""
+ASYNC_FETCH
+    - Connects to Brandmeister Last Heard using websockets
+    - Raw string is added to "queue"
+    - Only those calls made to talkgroups in "tgs" are put in the queue
+"""
 async def async_fetch(queue):
     uri = "wss://api.brandmeister.network/lh/%7D/?EIO=3&transport=websocket"
     while True:
@@ -144,7 +175,12 @@ async def async_fetch(queue):
             except Exception as e:
                 print('RESTART: ' + e.__str__())
             
-
+"""
+ASYNC_PROCESS
+    - Waits for queue data
+    - When there is string data in "queue", it calls "sort_data_by_time" function
+    - Prints to terminal every one second
+"""
 async def async_process(queue):
     last_print = time.time()
     while True:
@@ -156,15 +192,22 @@ async def async_process(queue):
         if data['DestinationID'] in tgs:
             dstID = data['DestinationID']
             history_tgs[dstID] = sort_data_by_time(history_tgs[dstID] + [data])
-            
+
+        #### THIS PART TO BE TAKEN OUT TO SEPARATE FUNCTION
         if time.time() - last_print >= 1:
             print_history(history_tgs)
             last_print = time.time()
+            
 
+"""
+Starts main loop
+"""
+if __name__ == "__main__":
+    loop = asyncio.get_event_loop()
+    queue = asyncio.Queue()
 
-loop = asyncio.get_event_loop()
-queue = asyncio.Queue()
-fetch = async_fetch(queue)
-process = async_process(queue)
-loop.run_until_complete(asyncio.gather(fetch,process))
-loop.close()
+    afetch = async_fetch(queue)
+    aprocess = async_process(queue)
+
+    loop.run_until_complete(asyncio.gather(afetch, aprocess))
+    loop.close()
