@@ -14,6 +14,8 @@ tgs = [450, 45021, 45022, 45023, 45024, 45025, 45026, 45027, 45028, 45029]
 NUM_HISTORY = 5
 TIMEOUT = 180
 
+NUM_PADD = 30
+
 init(autoreset=True)
 CHAR_BOLD = '\033[1m'
 CHAR_UNBOLD = '\033[0m'
@@ -105,16 +107,16 @@ def print_history(history_tgs):
             if history_tg[0]['Stop'] == 0:
                 elapsed = now-history_tg[0]['Start']
                 text_active = '%s, %s (%ds) ' % (history_tg[0]['SourceCall'], history_tg[0]['SourceName'], elapsed)
-                text_active = text_active.ljust(30, '-')
+                text_active = text_active.ljust(NUM_PADD, '-')
                 text_tg = '%s %-5d %s' % (STYLE_ACTIVE, tg, STYLE_RESET)
             else:
                 if len(text_inactive) > 0:
-                    text_active = ''.ljust(30, '-')
+                    text_active = ''.ljust(NUM_PADD, '-')
                     text_tg = '%s %-5d %s' % (STYLE_INACTIVE, tg, STYLE_RESET)
         except Exception as e:
             a = 1
 
-        print('%s | %s | %s' % (text_tg, text_active.ljust(30), text_inactive))
+        print('%s | %s | %s' % (text_tg, text_active.ljust(NUM_PADD), text_inactive))
 
     print(Back.RESET + Fore.RESET + Style.RESET_ALL + CHAR_UNBOLD)
     print('Developed by Chanyeol Yoo (VK2CYO) v%.1f' % ver)
