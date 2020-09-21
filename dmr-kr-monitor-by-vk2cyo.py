@@ -7,6 +7,27 @@ License: MIT
 Version: v1.1
 Maintainer: Chanyeol Yoo (VK2CYO)
 Email: vk2cyo@gmail.com
+URL: https://github.com/chanyeolyoo/BMRMonitor
+
+Copyright (c) 2020 Chanyeol Yoo, Ph.D. (VK2CYO)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 """
 
 import asyncio
@@ -23,9 +44,9 @@ IS_TEST = False
 tgs = [450, 45021, 45022, 45023, 45024, 45025, 45026, 45027, 45028, 45029]  # TALKGROUPS TO BE MONITORED
 NUM_HISTORY = 5     # NUMBER OF HISTORY FOR EACH TALKGROUP
 TIMEOUT = 180       # TIMEOUT FOR INACTIVE CALLS
-
 NUM_PADD = 30       # NUMBER OF EMPTY SPACES IN ACTIVE CALL FIELD
 
+#### PARAMETERS FOR PRINTING TO TERMINAL
 init(autoreset=True)
 CHAR_BOLD = '\033[1m'
 CHAR_UNBOLD = '\033[0m'
@@ -179,10 +200,8 @@ async def async_fetch(queue):
 ASYNC_PROCESS
     - Waits for queue data
     - When there is string data in "queue", it calls "sort_data_by_time" function
-    - Prints to terminal every one second
 """
 async def async_process(queue):
-    last_print = time.time()
     while True:
         str = await queue.get()
         data = get_data_from_packet(str)
@@ -192,12 +211,15 @@ async def async_process(queue):
         if data['DestinationID'] in tgs:
             dstID = data['DestinationID']
             history_tgs[dstID] = sort_data_by_time(history_tgs[dstID] + [data])
-
-        #### THIS PART TO BE TAKEN OUT TO SEPARATE FUNCTION
-        if time.time() - last_print >= 1:
-            print_history(history_tgs)
-            last_print = time.time()
             
+"""
+ASYNC_PRINT
+    - Prints to terminal every one second
+"""
+async def async_print():
+    while True:
+        await asyncio.sleep(1.0)
+        print_history(history_tgs)
 
 """
 Starts main loop
@@ -208,6 +230,7 @@ if __name__ == "__main__":
 
     afetch = async_fetch(queue)
     aprocess = async_process(queue)
+    aprint = async_print()
 
-    loop.run_until_complete(asyncio.gather(afetch, aprocess))
+    loop.run_until_complete(asyncio.gather(afetch, aprocess, aprint))
     loop.close()
