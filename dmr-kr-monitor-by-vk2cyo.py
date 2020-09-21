@@ -4,7 +4,7 @@ Brandmeister DMR Monitor for Korean Talkgroups
 Author: Chanyeol Yoo (VK2CYO)
 Copyright: Chanyeol Yoo, Ph.D. (VK2CYO), 2020
 License: MIT
-Version: v1.1
+Version: v1.11
 Maintainer: Chanyeol Yoo (VK2CYO)
 Email: vk2cyo@gmail.com
 URL: https://github.com/chanyeolyoo/BMRMonitor
@@ -38,7 +38,7 @@ import sys
 import requests
 from colorama import Fore, Back, Style, init
 
-ver = 1.1
+ver = 1.11
 IS_TEST = False
 
 tgs = [450, 45021, 45022, 45023, 45024, 45025, 45026, 45027, 45028, 45029]  # TALKGROUPS TO BE MONITORED
@@ -169,7 +169,7 @@ def print_history(history_tgs):
 
         print('%s | %s | %s' % (text_tg, text_active.ljust(NUM_PADD), text_inactive))
 
-    print('Developed by Chanyeol Yoo (VK2CYO) v%.1f' % ver)
+    print('Developed by Chanyeol Yoo (VK2CYO) v%.2f' % ver)
     print('https://github.com/chanyeolyoo/BMRMonitor')
 
     if is_update_available:
