@@ -37,13 +37,18 @@ import datetime, time
 import sys
 import requests
 from colorama import Fore, Back, Style, init
+import sqlite3
+
+import flask
+from flask import request, jsonify
+import json
 
 ver = 1.11
 IS_TEST = False
 
 tgs = [450, 45021, 45022, 45023, 45024, 45025, 45026, 45027, 45028, 45029]  # TALKGROUPS TO BE MONITORED
 NUM_HISTORY = 5     # NUMBER OF HISTORY FOR EACH TALKGROUP
-TIMEOUT = 180       # TIMEOUT FOR INACTIVE CALLS
+TIMEOUT = 180      # TIMEOUT FOR INACTIVE CALLS
 NUM_PADD = 30       # NUMBER OF EMPTY SPACES IN ACTIVE CALL FIELD
 
 #### PARAMETERS FOR PRINTING TO TERMINAL
@@ -72,43 +77,17 @@ try:
 except:
     is_update_available = False
 
-#### INITIALISING HISTORY LIST FOR EACH TALKGROUP
-history_tgs = {}
+# conn = sqlite3.connect('database.db', isolation_level=None)
+conn = sqlite3.connect('database.db')
+# conn.execute('''DROP TABLE entries;''')
+# conn.execute('''DROP TABLE talkgroups;''')
+conn.execute('''CREATE TABLE IF NOT EXISTS entries (SourceCall text, SourceName text, DestinationID NUMERIC, Start NUMERIC, Stop NUMERIC)''')
+conn.execute('''CREATE TABLE IF NOT EXISTS talkgroups (id NUMERIC, name TEXT)''')
+
+
 for tg in tgs:
-    history_tgs[tg] = []
-
-"""
-SORT_DATA_BY_TIME
-    - This function updates "history_tgs" list given new data
-    - It maintains NUM_HISTORY number of calls for each talkgroup
-    - If duplicate callsigns are present, only the latest one remains
-    - Returned "history_tgs" is in descending order of call time
-    -- If the call is active, then it looks at START time
-    -- Otherwise, it looks at STOP time
-"""
-def sort_data_by_time(data):
-    now = time.time()
-
-
-    data_new = []
-    callsigns = set([d['SourceCall'] for d in data])
-    for callsign in callsigns:
-        entry = {}
-        for d in data:
-            if d['SourceCall'] == callsign:
-                if (len(entry) == 0) or (d['Stop'] > entry['Stop']) or (d['Stop']==0 and d['Start'] > entry['Start']):
-                    entry = d
-        data_new.append(entry)
-
-    data = data_new
-    data_new = []
-    for d in data:
-        if d['Stop'] == 0 or now-d['Stop'] < TIMEOUT:
-            data_new.append(d)
-
-    data_new = sorted(data_new, key=lambda k:k['Start'], reverse=True)
-    data_new = data_new[0:(NUM_HISTORY)]
-    return data_new
+    conn.execute('''INSERT INTO talkgroups VALUES (%d, '%s')''' % (tg, ''))
+conn.commit()
 
 """
 GET_DATA_FROM_PACKET
@@ -127,11 +106,23 @@ def get_data_from_packet(str):
     except:
         return None
 
+def get_dict_from_query(conn, query_str):
+    exec = conn.execute(query_str)
+
+    fieldnames = [d[0] for d in exec.description]
+    rows = exec.fetchall()
+    results = []
+    for row in rows:
+        data = dict(zip(fieldnames, row)) 
+        results.append(data)
+
+    return results
+
 """
 PRINT_HISTORY
     - Prints "history_tgs" in terminal
 """
-def print_history(history_tgs):
+def print_history():
     now = time.time()
 
     if sys.platform == 'linux':
@@ -142,30 +133,31 @@ def print_history(history_tgs):
     if IS_TEST:
         print('***** TEST VERSION *****')
 
+    conn.execute('''DELETE FROM entries WHERE Stop>0 AND %d-Stop>%d;''' % (now, TIMEOUT))
+    conn.commit()
+
     for tg in tgs:
         text_tg = text_tg = '%s %-5d %s' % (STYLE_RESET, tg, STYLE_RESET)
         text_active = ''
         text_inactive = ''
 
-        history_tg = history_tgs[tg]
-        try:
-            text_inactive = ''
-            for d in history_tg:
-                if now - d['Stop'] < TIMEOUT:
-                    text_inactive = text_inactive + ('%s (%ds), ' % (d['SourceCall'], now - d['Stop']))
-            text_inactive = text_inactive
+        active_all = get_dict_from_query(conn, '''SELECT * FROM entries WHERE DestinationID=%d AND Stop=0 ORDER BY Start DESC;''' % (tg))
+        inactive_all = get_dict_from_query(conn, '''SELECT * FROM entries WHERE DestinationID=%d AND Stop>0 ORDER BY Stop DESC;''' % (tg))
+            
+        text_inactive = ''
+        for inactive in inactive_all:
+            text_inactive = text_inactive + ('%s (%ds), ' % (inactive['SourceCall'], now - inactive['Stop']))
 
-            if history_tg[0]['Stop'] == 0:
-                elapsed = now-history_tg[0]['Start']
-                text_active = '%s, %s (%ds) ' % (history_tg[0]['SourceCall'], history_tg[0]['SourceName'], elapsed)
-                text_active = text_active.ljust(NUM_PADD, '-')
-                text_tg = '%s %-5d %s' % (STYLE_ACTIVE, tg, STYLE_RESET)
-            else:
-                if len(text_inactive) > 0:
-                    text_active = ''.ljust(NUM_PADD, '-')
-                    text_tg = '%s %-5d %s' % (STYLE_INACTIVE, tg, STYLE_RESET)
-        except Exception as e:
-            a = 1
+        if len(active_all) > 0:
+            text_tg = '%s %-5d %s' % (STYLE_ACTIVE, tg, STYLE_RESET)
+            text_active = '%s, %s (%ds) ' % (active_all[0]['SourceCall'], active_all[0]['SourceName'], now - active_all[0]['Start'])
+        
+        
+        if len(active_all) > 0:
+            text_tg = '%s %-5d %s' % (STYLE_ACTIVE, tg, STYLE_RESET)
+        elif len(inactive_all) > 0:
+            text_tg = '%s %-5d %s' % (STYLE_INACTIVE, tg, STYLE_RESET)
+            text_active = text_active.ljust(NUM_PADD, '-')
 
         print('%s | %s | %s' % (text_tg, text_active.ljust(NUM_PADD), text_inactive))
 
@@ -195,7 +187,7 @@ async def async_fetch(queue):
 
             except Exception as e:
                 print('RESTART: ' + e.__str__())
-            
+
 """
 ASYNC_PROCESS
     - Waits for queue data
@@ -205,12 +197,22 @@ async def async_process(queue):
     while True:
         str = await queue.get()
         data = get_data_from_packet(str)
+
         if data==None:
             continue
 
         if data['DestinationID'] in tgs:
             dstID = data['DestinationID']
-            history_tgs[dstID] = sort_data_by_time(history_tgs[dstID] + [data])
+
+            prevs = get_dict_from_query(conn, '''SELECT * FROM entries WHERE sourceCall = '%s' AND destinationID = %d;''' % (data['SourceCall'], data['DestinationID']))
+            if len(prevs) == 0:
+                conn.execute('''INSERT INTO entries VALUES ('%s','%s',%d,%d,%d)''' % (data['SourceCall'], data['SourceName'], data['DestinationID'], data['Start'], data['Stop']))
+            # elif (data['Stop'] > prevs[0]['Stop']) or (data['Stop']==0 and data['Start'] > prevs[0]['Start']):
+            else:
+                conn.execute('''UPDATE entries SET start = %d, stop = %d WHERE sourceCall = '%s' AND destinationID = %d;''' % (data['Start'], data['Stop'], data['SourceCall'], data['DestinationID']))
+            
+            
+            # history_tgs[dstID] = sort_data_by_time(history_tgs[dstID] + [data])
             
 """
 ASYNC_PRINT
@@ -219,7 +221,7 @@ ASYNC_PRINT
 async def async_print():
     while True:
         await asyncio.sleep(1.0)
-        print_history(history_tgs)
+        print_history()
 
 """
 Starts main loop
@@ -231,6 +233,8 @@ if __name__ == "__main__":
     afetch = async_fetch(queue)
     aprocess = async_process(queue)
     aprint = async_print()
+
+    
 
     loop.run_until_complete(asyncio.gather(afetch, aprocess, aprint))
     loop.close()
