@@ -9,7 +9,7 @@ from tkinter.ttk import Frame, Label, Button
 import webbrowser
 
 tgs = [450, 45021, 45022, 45023, 45024, 45025, 45026, 45027, 45028, 45029]
-VERSION = 1.10
+VERSION = 1.20
 IS_TEST = False
 
 class Screen():
@@ -35,11 +35,11 @@ class Screen():
         status_frame = Frame(self.root)
         setting_frame = Frame(self.root)
         
-        author_frame.grid(row=0, column=0, padx=5, pady=5, columnspan=2)
+        # info_frame.grid(row=0, column=0, padx=5, pady=5, columnspan=2)
         list_frame.grid(row=1, column=0, padx=5, pady=5, columnspan=2)
-        setting_frame.grid(row=2, column=0, padx=5, pady=5, columnspan=2)
-        # author_frame.grid(row=3, column=0, padx=5, pady=5)
-        # status_frame.grid(row=3, column=1, padx=5, pady=5)
+        setting_frame.grid(row=2, column=0, padx=5, pady=5, columnspan=2, sticky='ew')
+        author_frame.grid(row=3, column=0, padx=5, pady=5, sticky='ew')
+        status_frame.grid(row=3, column=1, padx=5, pady=5, sticky='ew')
 
         '''Setting frame'''
         istop = tk.IntVar(value=1)
@@ -63,16 +63,16 @@ class Screen():
         ttk.Treeview(info_frame, selectmode ='browse', height=self.monitor.num_history, pad=3).grid(row=0, column=1, rowspan=3)
 
         '''Author info'''
-        Label(self.root, text='Developed by Chanyeol Yoo (VK2CYO)').grid(row=3, column=0, padx=5, pady=5, sticky='ew')
+        Label(author_frame, text=f'Developed by Chanyeol Yoo (VK2CYO)\nv{VERSION}', justify=tk.LEFT).grid(row=3, column=0, padx=5, pady=5, sticky='ew')
 
         '''Status'''
         def openGit():
             webbrowser.open_new(self.url_git)
         if self.is_update_available:
-            button = Button(self.root, text='업데이트', command=openGit)
+            button = Button(status_frame, text='업데이트 가능', command=openGit)
         else:
-            button = Button(self.root, text="Github", command=openGit)
-        button.grid(row=3, column=1, sticky='ew', padx=5, pady=5)
+            button = Button(status_frame, text="Github", command=openGit)
+        button.grid(row=0, column=1, sticky='ew', padx=5, pady=5)
         button.config(width=20)
 
         '''List Frame'''
