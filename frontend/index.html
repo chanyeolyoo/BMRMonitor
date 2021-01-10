@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Brandmeister Korean Talkgroup Monitor by VK2CYO</title>
+</head>
+<body>
+
+<table id="data_table">
+	<tbody>
+		<tr>
+			<td>Talkgroup</td>
+			<!-- <td>Name</td> -->
+			<td>Active</td>
+			<td>Inactive</td>
+		</tr>
+		
+		<!-- <tr>
+			<td>Like a butterfly</td>
+			<td>Boxing</td>
+			<td>9:00 AM - 11:00 AM</td>
+			<td>Aaron Chapman</td>
+		</tr>
+
+		<tr>
+			<td>Mind & Body</td>
+			<td>Yoga</td>
+			<td>8:00 AM - 9:00 AM</td>
+			<td>Adam Stewart</td>
+		</tr> -->
+	</tbody>
+</table>
+
+<script>
+	function update() {
+		var table = document.getElementById("data_table");
+		table.innerHTML = ''
+		
+		var request = new XMLHttpRequest();
+		request.open('GET', '/api/v1/query', true);
+		request.onload = function() {
+			var data = JSON.parse(this.response)
+			data.forEach(tg => {
+				console.log(tg)
+				var row = table.insertRow();
+				row.insertCell().innerHTML = tg.id;
+				// row.insertCell().innerHTML = tg.name;
+				if (tg.active.length > 0) {
+					row.insertCell().innerHTML = tg.active[0].sourceCall + ' (' + Math.round(tg.active[0].elapsed) + 's)';
+				}
+				else {
+					row.insertCell().innerHTML = ''
+				}
+				
+				text_inactive = ''
+				tg.inactive.forEach(inactive => {
+					text_inactive += inactive.sourceCall + ' (' + Math.round(inactive.elapsed) + 's), ';
+				});
+				row.insertCell().innerHTML = text_inactive
+				
+			});
+		};
+		request.send()
+
+		// var row = table.insertRow(0);
+		// var cell1 = row.insertCell(0);
+		// var cell2 = row.insertCell(1);
+		// cell1.innerHTML = "NEW CELL1";
+		// cell2.innerHTML = "NEW CELL2";
+	}
+	// window.onload = update;
+	window.setInterval(function(){
+		update()
+}, 1000);
+</script>
+
+</body>
+</html>
