@@ -38,6 +38,7 @@ from numpy import random
 import time
 import webbrowser
 import requests
+from qt import Ui_MainWindows
 
 tgs = [450, 45021, 45022, 45023, 45024, 45025, 45026, 45027, 45028, 45029]
 VERSION = 1.4
@@ -65,10 +66,11 @@ def check_update():
 
     return is_update_available, url_git
 
-class MainWindow(QtWidgets.QMainWindow):
+class MainWindow(QtWidgets.QMainWindow, Ui_MainWindows):
     def __init__(self, monitor):
-        super().__init__()
-        uic.loadUi("qt.ui", self)
+        super(MainWindow, self).__init__()
+        # uic.loadUi("./qt.ui", self)
+        self.setupUi(self)
 
         self.monitor = monitor
 
@@ -165,9 +167,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
 from monitor import Monitor
 monitor = Monitor(tgs)
-monitor.start()
 
 app = QtWidgets.QApplication(sys.argv)
 window = MainWindow(monitor)
+
+monitor.start()
 window.show()
+
 app.exec_()
