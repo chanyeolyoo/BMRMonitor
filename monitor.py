@@ -87,7 +87,7 @@ class Monitor(threading.Thread):
         for tg in tgs:
             self.history_tgs[tg] = []
 
-        self._stopping = False
+        self._flag_stop = False
 
     """
     SORT_DATA_BY_TIME
@@ -193,9 +193,9 @@ class Monitor(threading.Thread):
         uri = "wss://api.brandmeister.network/lh/%7D/?EIO=3&transport=websocket"
         while True:
             try:
-                async with websockets.connect(uri) as websocket:
+                async with websockets.connect(uri) as self.websocket:
                     while True:
-                        str = await websocket.recv()
+                        str = await self.websocket.recv()
                         # print("received something")
                         
                         data = self.get_data_from_packet(str)
@@ -205,14 +205,18 @@ class Monitor(threading.Thread):
                         if data['DestinationID'] in self.tgs:
                             dstID = data['DestinationID']
                             self.history_tgs[dstID] = self.sort_data_by_time(self.history_tgs[dstID] + [data])
-                            # print(self.history_tgs)
+
+                        if self._flag_stop:
+                            return
             except Exception as e:
                 print('RESTART: ' + e.__str__())
 
     def run(self):
+        self._flag_stop = False
         asyncio.run(self.process())
         
-
+    def stop(self):
+        self._flag_stop = True
 
 
 if __name__ == "__main__":
