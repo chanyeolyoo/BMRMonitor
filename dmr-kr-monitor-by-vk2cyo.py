@@ -191,7 +191,6 @@ async def async_fetch(queue):
                 while True:
                     str = await websocket.recv()
                     await queue.put(str)
-                    # print(queue.qsize())
 
             except Exception as e:
                 print('RESTART: ' + e.__str__())
@@ -219,7 +218,8 @@ ASYNC_PRINT
 async def async_print():
     while True:
         await asyncio.sleep(1.0)
-        print_history(history_tgs)
+        # print_history(history_tgs)
+        print(history_tgs)
 
 """
 Starts main loop
