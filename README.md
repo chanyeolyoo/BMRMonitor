@@ -1,6 +1,7 @@
 # Brandmeister DMR Talkgroup Monitor
 v1.50
-Created by Chanyeol Yoo, Ph.D.(VK2CYO, former VK2FAED)
+
+Created by Chanyeol Yoo, Ph.D. (VK2CYO, former VK2FAED)
 
 ## How to run
 ### Run GUI using Python3
