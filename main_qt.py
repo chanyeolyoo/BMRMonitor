@@ -69,8 +69,10 @@ def check_update():
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindows):
     def __init__(self, monitor):
         super(MainWindow, self).__init__()
-        # uic.loadUi("./qt.ui", self)
         self.setupUi(self)
+
+        # super().__init__()
+        # uic.loadUi("./qt.ui", self)
 
         self.monitor = monitor
 
@@ -98,14 +100,19 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindows):
         self.timer.timeout.connect(self.update)
 
         is_update_available, url_git = check_update()
-        def open_webbrowser():
+        def open_git():
             webbrowser.open(url_git)
-        self.pushButton_github.clicked.connect(open_webbrowser)
+        self.pushButton_github.clicked.connect(open_git)
         if is_update_available:
             self.pushButton_github.setText('업데이트 가능')
             self.pushButton_github.setStyleSheet("background-color: green")
         else:
             self.pushButton_github.setText('GitHub')
+            
+        def open_lastheard():
+            url = 'https://brandmeister.network/?page=lh&jsonquery=%7B%22condition%22%3A%22OR%22%2C%22rules%22%3A%5B%7B%22id%22%3A%22DestinationID%22%2C%22field%22%3A%22DestinationID%22%2C%22type%22%3A%22integer%22%2C%22input%22%3A%22text%22%2C%22operator%22%3A%22equal%22%2C%22value%22%3A%22450%22%7D%2C%7B%22id%22%3A%22DestinationID%22%2C%22field%22%3A%22DestinationID%22%2C%22type%22%3A%22integer%22%2C%22input%22%3A%22text%22%2C%22operator%22%3A%22equal%22%2C%22value%22%3A%2245021%22%7D%2C%7B%22id%22%3A%22DestinationID%22%2C%22field%22%3A%22DestinationID%22%2C%22type%22%3A%22integer%22%2C%22input%22%3A%22text%22%2C%22operator%22%3A%22equal%22%2C%22value%22%3A%2245022%22%7D%2C%7B%22id%22%3A%22DestinationID%22%2C%22field%22%3A%22DestinationID%22%2C%22type%22%3A%22integer%22%2C%22input%22%3A%22text%22%2C%22operator%22%3A%22equal%22%2C%22value%22%3A%2245023%22%7D%2C%7B%22id%22%3A%22DestinationID%22%2C%22field%22%3A%22DestinationID%22%2C%22type%22%3A%22integer%22%2C%22input%22%3A%22text%22%2C%22operator%22%3A%22equal%22%2C%22value%22%3A%2245024%22%7D%2C%7B%22id%22%3A%22DestinationID%22%2C%22field%22%3A%22DestinationID%22%2C%22type%22%3A%22integer%22%2C%22input%22%3A%22text%22%2C%22operator%22%3A%22equal%22%2C%22value%22%3A%2245025%22%7D%2C%7B%22id%22%3A%22DestinationID%22%2C%22field%22%3A%22DestinationID%22%2C%22type%22%3A%22integer%22%2C%22input%22%3A%22text%22%2C%22operator%22%3A%22equal%22%2C%22value%22%3A%2245026%22%7D%2C%7B%22id%22%3A%22DestinationID%22%2C%22field%22%3A%22DestinationID%22%2C%22type%22%3A%22integer%22%2C%22input%22%3A%22text%22%2C%22operator%22%3A%22equal%22%2C%22value%22%3A%2245027%22%7D%2C%7B%22id%22%3A%22DestinationID%22%2C%22field%22%3A%22DestinationID%22%2C%22type%22%3A%22integer%22%2C%22input%22%3A%22text%22%2C%22operator%22%3A%22equal%22%2C%22value%22%3A%2245028%22%7D%2C%7B%22id%22%3A%22DestinationID%22%2C%22field%22%3A%22DestinationID%22%2C%22type%22%3A%22integer%22%2C%22input%22%3A%22text%22%2C%22operator%22%3A%22equal%22%2C%22value%22%3A%2245029%22%7D%5D%7D'
+            webbrowser.open(url)
+        self.pushButton_lastheard.clicked.connect(open_lastheard)
     
     def checkBox_alwaysontop_changed(self, state):
         if state == Qt.Checked:
