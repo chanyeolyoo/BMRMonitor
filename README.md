@@ -9,7 +9,7 @@ Copyright (c) 2021 Chanyeol Yoo, Ph.D. (VK2CYO, former VK2FAED)
 ### Run GUI using Python3
 > python3 main_qt.py
 
-### Run CUI using Python3
+### Run CLI using Python3
 > python3 monitor.py
 
 ### Compile
