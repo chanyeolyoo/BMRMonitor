@@ -29,7 +29,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-
 import asyncio
 import websockets
 import os
@@ -38,42 +37,6 @@ import sys
 import requests
 from colorama import Fore, Back, Style, init
 import threading
-
-ver = 1.11
-IS_TEST = False
-
-# tgs = [450, 45021, 45022, 45023, 45024, 45025, 45026, 45027, 45028, 45029]  # TALKGROUPS TO BE MONITORED
-NUM_HISTORY = 5     # NUMBER OF HISTORY FOR EACH TALKGROUP
-TIMEOUT = 180       # TIMEOUT FOR INACTIVE CALLS
-NUM_PADD = 30       # NUMBER OF EMPTY SPACES IN ACTIVE CALL FIELD
-
-#### PARAMETERS FOR PRINTING TO TERMINAL
-init(autoreset=True)
-CHAR_BOLD = '\033[1m'
-CHAR_UNBOLD = '\033[0m'
-CHAR_RESET = Back.RESET + Fore.RESET + Style.RESET_ALL + CHAR_UNBOLD
-
-STYLE_ACTIVE = Back.RED  + Fore.BLACK
-STYLE_INACTIVE = Back.YELLOW + Fore.BLACK
-STYLE_RESET = Back.RESET + Fore.RESET + Style.RESET_ALL + CHAR_UNBOLD
-
-# #### CHECKING FOR UPDATE
-is_update_available = False
-# try:
-#     text_release = requests.get('https://api.github.com/repos/chanyeolyoo/BMRMonitor/releases/latest').text
-#     text_release = text_release.replace('false', 'False')
-#     text_release = text_release.replace('true', 'True')
-#     text_release = text_release.replace('null', 'None')
-#     resp_release = eval(text_release)
-#     tag_release = float(resp_release['tag_name'])
-
-#     if (tag_release > ver) or (tag_release >= ver and IS_TEST):
-#         is_update_available = True
-#     else:
-#         is_update_available = False
-# except:
-#     is_update_available = False
-
 
 class Monitor(threading.Thread):
 # class Monitor:
@@ -114,11 +77,11 @@ class Monitor(threading.Thread):
         data = data_new
         data_new = []
         for d in data:
-            if d['Stop'] == 0 or now-d['Stop'] < TIMEOUT:
+            if d['Stop'] == 0 or now-d['Stop'] < self.timeout:
                 data_new.append(d)
 
         data_new = sorted(data_new, key=lambda k:k['Start'], reverse=True)
-        data_new = data_new[0:(NUM_HISTORY)]
+        data_new = data_new[0:(self.num_history)]
         return data_new
 
     """
@@ -137,57 +100,6 @@ class Monitor(threading.Thread):
             return data['payload']
         except:
             return None
-
-    """
-    PRINT_HISTORY
-        - Prints "history_tgs" in terminal
-    """
-    def print_history(self):
-        now = time.time()
-
-        if sys.platform == 'linux':
-            os.system('clear')
-        else:
-            os.system('cls')
-
-        if IS_TEST:
-            print('***** TEST VERSION *****')
-
-        for tg in self.tgs:
-            text_tg = text_tg = '%s %-5d %s' % (STYLE_RESET, tg, STYLE_RESET)
-            text_active = ''
-            text_inactive = ''
-
-            history_tg = self.history_tgs[tg]
-            try:
-                text_inactive = ''
-                for d in history_tg:
-                    if now - d['Stop'] < TIMEOUT:
-                        text_inactive = text_inactive + ('%s (%ds), ' % (d['SourceCall'], now - d['Stop']))
-                text_inactive = text_inactive
-
-                if history_tg[0]['Stop'] == 0:
-                    elapsed = now-history_tg[0]['Start']
-                    text_active = '%s, %s (%ds) ' % (history_tg[0]['SourceCall'], history_tg[0]['SourceName'], elapsed)
-                    text_active = text_active.ljust(NUM_PADD, '-')
-                    text_tg = '%s %-5d %s' % (STYLE_ACTIVE, tg, STYLE_RESET)
-                else:
-                    if len(text_inactive) > 0:
-                        text_active = ''.ljust(NUM_PADD, '-')
-                        text_tg = '%s %-5d %s' % (STYLE_INACTIVE, tg, STYLE_RESET)
-            except Exception as e:
-                a = 1
-
-            print('%s | %s | %s' % (text_tg, text_active.ljust(NUM_PADD), text_inactive))
-
-        print('Developed by Chanyeol Yoo (VK2CYO) v%.2f' % ver)
-        print('https://github.com/chanyeolyoo/BMRMonitor')
-
-        if is_update_available:
-            print(Back.GREEN + Fore.BLACK + 'Update available: ' + resp_release['html_url'] + Style.RESET_ALL)
-        else:
-            print('Up-to-date')
-
 
     async def process(self):
         uri = "wss://api.brandmeister.network/lh/%7D/?EIO=3&transport=websocket"
@@ -218,18 +130,94 @@ class Monitor(threading.Thread):
     def stop(self):
         self._flag_stop = True
 
+"""
+PRINT_HISTORY
+    - Prints "history_tgs" in terminal
+"""
+def print_history(self, release=None):
+    TIMEOUT = 180       # TIMEOUT FOR INACTIVE CALLS
+    NUM_PADD = 30       # NUMBER OF EMPTY SPACES IN ACTIVE CALL FIELD
+
+    #### PARAMETERS FOR PRINTING TO TERMINAL
+    init(autoreset=True)
+    CHAR_UNBOLD = '\033[0m'
+    CHAR_RESET = Back.RESET + Fore.RESET + Style.RESET_ALL + CHAR_UNBOLD
+
+    STYLE_ACTIVE = Back.RED  + Fore.BLACK
+    STYLE_INACTIVE = Back.YELLOW + Fore.BLACK
+    STYLE_RESET = Back.RESET + Fore.RESET + Style.RESET_ALL + CHAR_UNBOLD
+
+    now = time.time()
+
+    if sys.platform == 'linux':
+        os.system('clear')
+    else:
+        os.system('cls')
+
+    for tg in self.tgs:
+        text_tg = text_tg = '%s %-5d %s' % (STYLE_RESET, tg, STYLE_RESET)
+        text_active = ''
+        text_inactive = ''
+
+        history_tg = self.history_tgs[tg]
+        try:
+            text_inactive = ''
+            for d in history_tg:
+                if now - d['Stop'] < TIMEOUT:
+                    text_inactive = text_inactive + ('%s (%ds), ' % (d['SourceCall'], now - d['Stop']))
+            text_inactive = text_inactive
+
+            if history_tg[0]['Stop'] == 0:
+                elapsed = now-history_tg[0]['Start']
+                text_active = '%s, %s (%ds) ' % (history_tg[0]['SourceCall'], history_tg[0]['SourceName'], elapsed)
+                text_active = text_active.ljust(NUM_PADD, '-')
+                text_tg = '%s %-5d %s' % (STYLE_ACTIVE, tg, STYLE_RESET)
+            else:
+                if len(text_inactive) > 0:
+                    text_active = ''.ljust(NUM_PADD, '-')
+                    text_tg = '%s %-5d %s' % (STYLE_INACTIVE, tg, STYLE_RESET)
+        except Exception as e:
+            a = 1
+
+        print('%s | %s | %s' % (text_tg, text_active.ljust(NUM_PADD), text_inactive))
+
+    print('Developed by Chanyeol Yoo (VK2CYO)')
+    print('https://github.com/chanyeolyoo/BMRMonitor')
+    if release is not None:
+        print(Back.GREEN + Fore.BLACK + 'Update available: ' + release['html_url'] + Style.RESET_ALL)
+
+
+def get_latest_release(current_version=0):
+    # #### CHECKING FOR UPDATE
+    is_update_available = False
+    try:
+        text_release = requests.get('https://api.github.com/repos/chanyeolyoo/BMRMonitor/releases/latest').text
+        text_release = text_release.replace('false', 'False')
+        text_release = text_release.replace('true', 'True')
+        text_release = text_release.replace('null', 'None')
+        resp_release = eval(text_release)
+        tag_release = float(resp_release['tag_name'])
+
+        if (tag_release > current_version):
+            is_update_available = True
+        else:
+            is_update_available = False
+    except:
+        resp_release = []
+        is_update_available = False
+    return resp_release
+
+
 
 if __name__ == "__main__":
-    import threading
-
     tgs = [450, 45021, 45022, 45023, 45024, 45025, 45026, 45027, 45028, 45029]
 
+    release = get_latest_release()
+    
     monitor = Monitor(tgs)
     monitor.start()
 
-
-
     while True:
-        monitor.print_history()
+        print_history(monitor, release=release)
         time.sleep(1)
         pass
