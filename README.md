@@ -18,6 +18,7 @@ Created by Chanyeol Yoo, Ph.D. (VK2CYO, former VK2FAED)
 * Click "Update talkgroups" button
 * Add/delete desired talkgroups in separate lines, and save the file
 * Restart the programme
+Alternatively, create "talkgroups.txt" file in the same directory and add a list of desired talkgroups
 
 ![image](https://user-images.githubusercontent.com/24443987/107034360-b4f74e00-680a-11eb-9a37-266405fc3a77.png)
 
