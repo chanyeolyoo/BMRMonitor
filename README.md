@@ -1,6 +1,8 @@
-# BMRMonitor
+# Brandmeister DMR Talkgroup Monitor
 
 python3 main_qt.py
+
+pyinstaller main_qt.spec
 
 Created by Chanyeol Yoo, VK2CYO (former VK2FAED)
 
