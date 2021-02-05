@@ -1,7 +1,7 @@
 # Brandmeister DMR Talkgroup Monitor
 v1.50
 
-Created by Chanyeol Yoo, Ph.D. (VK2CYO, former VK2FAED)
+Copyright (c) 2021 Chanyeol Yoo, Ph.D. (VK2CYO, former VK2FAED)
 
 ![image](https://user-images.githubusercontent.com/24443987/107034360-b4f74e00-680a-11eb-9a37-266405fc3a77.png)
 
