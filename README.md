@@ -1,8 +1,6 @@
 # Brandmeister DMR Talkgroup Monitor
-Created by Chanyeol Yoo, Ph.D.(VK2CYO, former VK2FAED)
-
-## Latest version
 v1.50
+Created by Chanyeol Yoo, Ph.D.(VK2CYO, former VK2FAED)
 
 ## How to run
 ### Run GUI using Python3
@@ -14,7 +12,11 @@ v1.50
 ### Compile
 > pyinstaller main_qt.spec
 
-
+## How to update talkgroups
+* Run the programme (either .py or compiled .exe) at least once
+* Click "Update talkgroups" button
+* Add/delete desired talkgroups in separate lines, and save the file
+* Restart the programme
 
 ![image](https://user-images.githubusercontent.com/24443987/107034360-b4f74e00-680a-11eb-9a37-266405fc3a77.png)
 
