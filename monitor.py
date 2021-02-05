@@ -35,7 +35,6 @@ import os
 import datetime, time
 import sys
 import requests
-from colorama import Fore, Back, Style, init
 import threading
 
 class Monitor(threading.Thread):
@@ -135,6 +134,7 @@ PRINT_HISTORY
     - Prints "history_tgs" in terminal
 """
 def print_history(self, release=None):
+    from colorama import Fore, Back, Style, init
     TIMEOUT = 180       # TIMEOUT FOR INACTIVE CALLS
     NUM_PADD = 30       # NUMBER OF EMPTY SPACES IN ACTIVE CALL FIELD
 

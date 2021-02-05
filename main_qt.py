@@ -30,7 +30,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import sys
+import sys, os
 from PyQt5 import QtWidgets, QtCore, QtGui, uic
 from PyQt5.QtGui import QColor
 from PyQt5.QtCore import Qt
@@ -39,11 +39,11 @@ import time
 import webbrowser
 import requests
 from qt import Ui_MainWindows
+from monitor import Monitor
 
-tgs = [450, 45021, 45022, 45023, 45024, 45025, 45026, 45027, 45028, 45029]
-VERSION = 1.4
+
+VERSION = 1.5
 IS_TEST = False
-NUM_PADD = 50
 
 def check_update():
     try:
@@ -53,7 +53,7 @@ def check_update():
         text_release = text_release.replace('null', 'None')
         resp_release = eval(text_release)
         tag_release = float(resp_release['tag_name'])
-        print(tag_release)
+        print(f'Latest: {tag_release}')
         if (tag_release > VERSION) or (tag_release >= VERSION and IS_TEST):
             is_update_available = True
         else:
@@ -66,7 +66,23 @@ def check_update():
 
     return is_update_available, url_git
 
+def get_tgs(default=None):
+    default = default or [450, 45021, 45022, 45023, 45024, 45025, 45026, 45027, 45028, 45029]
+    folder = os.path.dirname(os.path.realpath(__file__))
+    filename = os.path.join(folder, 'talkgroups.txt')
+    if not os.path.isfile(filename):
+        tgs = default
+        f = open(filename, 'w')
+        f.writelines([str(tg)+'\n' for tg in tgs])
+        f.close()
+    else:
+        f = open(filename, 'r')
+        tgs = [int(str) for str in f.read().splitlines()]
+        f.close()
+    return tgs
+
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindows):
+    NUM_PADD = 50
     def __init__(self, monitor):
         super(MainWindow, self).__init__()
         self.setupUi(self)
@@ -77,7 +93,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindows):
         self.monitor = monitor
 
         self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowStaysOnTopHint)
-        self.setFixedSize(self.size())
+        # self.setFixedSize(self.size())
 
         self.label_version.setText(f'v{VERSION}')
 
@@ -86,7 +102,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindows):
         header.setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
         header.setSectionResizeMode(2, QtWidgets.QHeaderView.Stretch)
 
-        for tg in tgs:
+        for tg in monitor.tgs:
             rowPos = self.tableWidget_tgs.rowCount()
             self.tableWidget_tgs.insertRow(rowPos)
             self.tableWidget_tgs.setItem(rowPos, 0, QtWidgets.QTableWidgetItem(str(tg)))   
@@ -104,7 +120,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindows):
             webbrowser.open(url_git)
         self.pushButton_github.clicked.connect(open_git)
         if is_update_available:
-            self.pushButton_github.setText('업데이트 가능')
+            self.pushButton_github.setText('Update available')
             self.pushButton_github.setStyleSheet("background-color: green")
         else:
             self.pushButton_github.setText('GitHub')
@@ -113,6 +129,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindows):
             url = 'https://brandmeister.network/?page=lh&jsonquery=%7B%22condition%22%3A%22OR%22%2C%22rules%22%3A%5B%7B%22id%22%3A%22DestinationID%22%2C%22field%22%3A%22DestinationID%22%2C%22type%22%3A%22integer%22%2C%22input%22%3A%22text%22%2C%22operator%22%3A%22equal%22%2C%22value%22%3A%22450%22%7D%2C%7B%22id%22%3A%22DestinationID%22%2C%22field%22%3A%22DestinationID%22%2C%22type%22%3A%22integer%22%2C%22input%22%3A%22text%22%2C%22operator%22%3A%22equal%22%2C%22value%22%3A%2245021%22%7D%2C%7B%22id%22%3A%22DestinationID%22%2C%22field%22%3A%22DestinationID%22%2C%22type%22%3A%22integer%22%2C%22input%22%3A%22text%22%2C%22operator%22%3A%22equal%22%2C%22value%22%3A%2245022%22%7D%2C%7B%22id%22%3A%22DestinationID%22%2C%22field%22%3A%22DestinationID%22%2C%22type%22%3A%22integer%22%2C%22input%22%3A%22text%22%2C%22operator%22%3A%22equal%22%2C%22value%22%3A%2245023%22%7D%2C%7B%22id%22%3A%22DestinationID%22%2C%22field%22%3A%22DestinationID%22%2C%22type%22%3A%22integer%22%2C%22input%22%3A%22text%22%2C%22operator%22%3A%22equal%22%2C%22value%22%3A%2245024%22%7D%2C%7B%22id%22%3A%22DestinationID%22%2C%22field%22%3A%22DestinationID%22%2C%22type%22%3A%22integer%22%2C%22input%22%3A%22text%22%2C%22operator%22%3A%22equal%22%2C%22value%22%3A%2245025%22%7D%2C%7B%22id%22%3A%22DestinationID%22%2C%22field%22%3A%22DestinationID%22%2C%22type%22%3A%22integer%22%2C%22input%22%3A%22text%22%2C%22operator%22%3A%22equal%22%2C%22value%22%3A%2245026%22%7D%2C%7B%22id%22%3A%22DestinationID%22%2C%22field%22%3A%22DestinationID%22%2C%22type%22%3A%22integer%22%2C%22input%22%3A%22text%22%2C%22operator%22%3A%22equal%22%2C%22value%22%3A%2245027%22%7D%2C%7B%22id%22%3A%22DestinationID%22%2C%22field%22%3A%22DestinationID%22%2C%22type%22%3A%22integer%22%2C%22input%22%3A%22text%22%2C%22operator%22%3A%22equal%22%2C%22value%22%3A%2245028%22%7D%2C%7B%22id%22%3A%22DestinationID%22%2C%22field%22%3A%22DestinationID%22%2C%22type%22%3A%22integer%22%2C%22input%22%3A%22text%22%2C%22operator%22%3A%22equal%22%2C%22value%22%3A%2245029%22%7D%5D%7D'
             webbrowser.open(url)
         self.pushButton_lastheard.clicked.connect(open_lastheard)
+        
+        def open_tgs():
+            filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'talkgroups.txt')
+            webbrowser.open(filepath)
+        self.pushButton_tgs.clicked.connect(open_tgs)
     
     def checkBox_alwaysontop_changed(self, state):
         if state == Qt.Checked:
@@ -160,7 +181,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindows):
                     self.tableWidget_tgs.item(rowPos, 2).setBackground(QColor(255, 255, 255))
 
                 # self.tableWidget_tgs.item(rowPos, 1).setText(text_active)
-                self.tableWidget_tgs.item(rowPos, 1).setText(text_active.ljust(NUM_PADD))
+                self.tableWidget_tgs.item(rowPos, 1).setText(text_active.ljust(self.NUM_PADD))
                 self.tableWidget_tgs.item(rowPos, 2).setText(text_inactive)
 
     def show(self):
@@ -171,14 +192,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindows):
         print('closed')
         self.monitor.stop()
 
+if __name__ == "__main__":
+    monitor = Monitor(get_tgs())
 
-from monitor import Monitor
-monitor = Monitor(tgs)
+    app = QtWidgets.QApplication(sys.argv)
+    window = MainWindow(monitor)
 
-app = QtWidgets.QApplication(sys.argv)
-window = MainWindow(monitor)
+    monitor.start()
+    window.show()
 
-monitor.start()
-window.show()
-
-app.exec_()
+    app.exec_()
