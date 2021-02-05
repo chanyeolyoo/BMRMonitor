@@ -3,13 +3,14 @@
 ## Latest version
 v1.50
 
-## Run GUI using Python3
+## How to use
+### Run GUI using Python3
 > python3 main_qt.py
 
-## Run CUI using Python3
+### Run CUI using Python3
 > python3 monitor.py
 
-## Compile
+### Compile
 > pyinstaller main_qt.spec
 
 Created by Chanyeol Yoo, VK2CYO (former VK2FAED)
