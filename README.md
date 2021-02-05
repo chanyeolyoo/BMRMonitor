@@ -1,7 +1,10 @@
 # Brandmeister DMR Talkgroup Monitor
 
-## Run using Python3
+## Run GUI using Python3
 > python3 main_qt.py
+
+## Run CUI using Python3
+> python3 monitor.py
 
 ## Compile
 > pyinstaller main_qt.spec
