@@ -1,5 +1,8 @@
 # Brandmeister DMR Talkgroup Monitor
 
+## Latest version
+v1.50
+
 ## Run GUI using Python3
 > python3 main_qt.py
 
@@ -11,4 +14,5 @@
 
 Created by Chanyeol Yoo, VK2CYO (former VK2FAED)
 
-![image](https://user-images.githubusercontent.com/24443987/104185167-b54d3500-5468-11eb-9c34-c428ff17a944.png)
+![image](https://user-images.githubusercontent.com/24443987/107034360-b4f74e00-680a-11eb-9a37-266405fc3a77.png)
+
